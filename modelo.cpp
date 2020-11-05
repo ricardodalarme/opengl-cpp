@@ -79,7 +79,7 @@ void display() {
     // Translation.
     glm::mat4 T = glm::translate(glm::mat4(1.0f), glm::vec3(translationX, translationY, translationZ));
     // Rotation around z-axis.
-    glm::mat4 Rz = glm::rotate(glm::mat4(1.0f), glm::radians((float)rotation), glm::vec3(0.0f, 0.0f, 1.0f));
+    glm::mat4 Rz = glm::rotate(glm::mat4(1.0f), glm::radians((float)rotation), glm::vec3(0.0f, 1.0f, 0.0f));
     // Scale.
     glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(scaleX, scaleY, scaleZ));
 
@@ -107,22 +107,22 @@ void reshape(int width, int height) {
 void keyboardScale(unsigned char key) {
     switch (key) {
         case 'w':
-            scaleY += 0.1;
+            scaleY += 0.05;
             break;
         case 's':
-            if (scaleY > 0.1) scaleY -= 0.1;
+            if (scaleY > 0.05) scaleY -= 0.05;
             break;
         case 'd':
-            scaleX += 0.1;
+            scaleX += 0.05;
             break;
         case 'a':
-            if (scaleX > 0.1) scaleX -= 0.1;
+            if (scaleX > 0.05) scaleX -= 0.05;
             break;
         case 'p':
-            scaleZ += 0.1;
+            scaleZ += 0.05;
             break;
         case 'n':
-            if (scaleZ > 0.1) scaleZ -= 0.1;
+            if (scaleZ > 0.05) scaleZ -= 0.05;
             break;
     }
 }
@@ -130,22 +130,22 @@ void keyboardScale(unsigned char key) {
 void keyboardTranslation(unsigned char key) {
     switch (key) {
         case 'w':
-            translationY += 0.1;
+            translationY += 0.05;
             break;
         case 's':
-            translationY -= 0.1;
+            translationY -= 0.05;
             break;
         case 'd':
-            translationX += 0.1;
+            translationX += 0.05;
             break;
         case 'a':
-            translationX -= 0.1;
+            translationX -= 0.05;
             break;
         case 'p':
-            translationZ += 0.1;
+            translationZ += 0.05;
             break;
         case 'n':
-            translationZ -= 0.1;
+            translationZ -= 0.05;
             break;
     }
 }
@@ -153,11 +153,11 @@ void keyboardTranslation(unsigned char key) {
 void keyboardRotation(unsigned char key) {
     switch (key) {
         case 'p':
-            rotation += 10;
+            rotation += 5;
             rotation = rotation % 360;
             break;
         case 'n':
-            rotation -= 10;
+            rotation -= 5;
             rotation = rotation % 360;
             break;
     }
