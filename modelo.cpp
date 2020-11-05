@@ -8,6 +8,11 @@
 #include "lib/cgImage.h"
 using namespace std;
 
+// Modos de operação do programa
+#define ROTATION 0
+#define TRANSLATION 1
+#define SCALE 2
+
 // Tamanho da janela
 int win_width = 800;
 int win_height = 600;
@@ -24,42 +29,47 @@ int program;
 unsigned int VAO;
 unsigned int VBO;
 /** Vertex shader. */
-const char *vertex_code = "\n"
-                          "#version 330 core\n"
-                          "layout (location = 0) in vec3 position;\n"
-                          "layout (location = 1) in vec3 color;\n"
-                          "\n"
-                          "out vec3 vColor;\n"
-                          "\n"
-                          "uniform mat4 transform;\n"
-                          "\n"
-                          "void main()\n"
-                          "{\n"
-                          "    gl_Position = transform * vec4(position, 1.0);\n"
-                          "    vColor = color;\n"
-                          "}\0";
+const char *vertex_code =
+    "\n"
+    "#version 330 core\n"
+    "layout (location = 0) in vec3 position;\n"
+    "layout (location = 1) in vec3 color;\n"
+    "\n"
+    "out vec3 vColor;\n"
+    "\n"
+    "uniform mat4 transform;\n"
+    "\n"
+    "void main()\n"
+    "{\n"
+    "    gl_Position = transform * vec4(position, 1.0);\n"
+    "    vColor = color;\n"
+    "}\0";
 
 /** Fragment shader. */
-const char *fragment_code = "\n"
-                            "#version 330 core\n"
-                            "\n"
-                            "in vec3 vColor;\n"
-                            "out vec4 FragColor;\n"
-                            "\n"
-                            "void main()\n"
-                            "{\n"
-                            "    FragColor = vec4(vColor, 1.0f);\n"
-                            "}\0";
+const char *fragment_code =
+    "\n"
+    "#version 330 core\n"
+    "\n"
+    "in vec3 vColor;\n"
+    "out vec4 FragColor;\n"
+    "\n"
+    "void main()\n"
+    "{\n"
+    "    FragColor = vec4(vColor, 1.0f);\n"
+    "}\0";
 
 // Para controlar rotação, translação e escala
-float scale = 1.0;
+int mode = ROTATION;
+float scaleX = 1.0;
+float scaleY = 1.0;
+float scaleZ = 1.0;
 int rotation = 0;
 float translationX = 0.0;
 float translationY = 0.0;
+float translationZ = 0.0;
 
 // Renderiza os vértices na tela
-void display()
-{
+void display() {
     glClearColor(0.241, 0.086, 0.206, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -67,11 +77,11 @@ void display()
     glBindVertexArray(VAO);
 
     // Translation.
-    glm::mat4 T = glm::translate(glm::mat4(1.0f), glm::vec3(translationX, translationY, 0.0f));
+    glm::mat4 T = glm::translate(glm::mat4(1.0f), glm::vec3(translationX, translationY, translationZ));
     // Rotation around z-axis.
     glm::mat4 Rz = glm::rotate(glm::mat4(1.0f), glm::radians((float)rotation), glm::vec3(0.0f, 0.0f, 1.0f));
     // Scale.
-    glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(scale, scale, scale));
+    glm::mat4 S = glm::scale(glm::mat4(1.0f), glm::vec3(scaleX, scaleY, scaleZ));
 
     // M = T*R*S.
     glm::mat4 M = T * Rz * S;
@@ -87,67 +97,118 @@ void display()
 }
 
 // Ajusta o tamanho da tela caso necessário
-void reshape(int width, int height)
-{
+void reshape(int width, int height) {
     win_width = width;
     win_height = height;
     glViewport(0, 0, width, height);
     glutPostRedisplay();
 }
 
+void keyboardScale(unsigned char key) {
+    switch (key) {
+        case 'w':
+            scaleY += 0.1;
+            break;
+        case 's':
+            if (scaleY > 0.1) scaleY -= 0.1;
+            break;
+        case 'd':
+            scaleX += 0.1;
+            break;
+        case 'a':
+            if (scaleX > 0.1) scaleX -= 0.1;
+            break;
+        case 'p':
+            scaleZ += 0.1;
+            break;
+        case 'n':
+            if (scaleZ > 0.1) scaleZ -= 0.1;
+            break;
+    }
+}
+
+void keyboardTranslation(unsigned char key) {
+    switch (key) {
+        case 'w':
+            translationY += 0.1;
+            break;
+        case 's':
+            translationY -= 0.1;
+            break;
+        case 'd':
+            translationX += 0.1;
+            break;
+        case 'a':
+            translationX -= 0.1;
+            break;
+        case 'p':
+            translationZ += 0.1;
+            break;
+        case 'n':
+            translationZ -= 0.1;
+            break;
+    }
+}
+
+void keyboardRotation(unsigned char key) {
+    switch (key) {
+        case 'p':
+            rotation += 10;
+            rotation = rotation % 360;
+            break;
+        case 'n':
+            rotation -= 10;
+            rotation = rotation % 360;
+            break;
+    }
+}
+
 // Faz a leitura das teclas do teclado
-void keyboard(unsigned char key, int x, int y)
-{
-    switch (key)
-    {
-    case 'q':
-        exit(0);
-    case 'v':
-        if (type_primitive == GL_POINTS)
-        {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            type_primitive = GL_TRIANGLES;
-        }
-        else
-        {
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            type_primitive = GL_POINTS;
-        }
-        break;
-    case 'p':
-        rotation += 10;
-        rotation = rotation % 360;
-        break;
-    case 'n':
-        rotation -= 10;
-        break;
-    case 'w':
-        translationY += 0.1;
-        break;
-    case 's':
-        translationY -= 0.1;
-        break;
-    case 'd':
-        translationX += 0.1;
-        break;
-    case 'a':
-        translationX -= 0.1;
-        break;
-    case 'i':
-        scale += 0.1;
-        break;
-    case 'o':
-        if (scale > 0.1)
-            scale -= 0.1;
-        break;
+void keyboard(unsigned char key, int x, int y) {
+    switch (key) {
+        case 'q':
+            exit(0);
+        case 'v':
+            if (type_primitive == GL_POINTS) {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                type_primitive = GL_TRIANGLES;
+            } else {
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                type_primitive = GL_POINTS;
+            }
+            break;
+        case 't':
+            mode = TRANSLATION;
+            glutSetWindowTitle("Translation mode");
+            break;
+        case 'r':
+            mode = ROTATION;
+            glutSetWindowTitle("Rotation mode");
+            break;
+        case 'e':
+            mode = SCALE;
+            glutSetWindowTitle("Scale mode");
+            break;
+        // faz o mapeamento das teclas de acordo com o modo atual escolhido
+        default:
+            switch (mode) {
+                case ROTATION:
+                    keyboardRotation(key);
+                    break;
+                case TRANSLATION:
+                    keyboardTranslation(key);
+                    break;
+                case SCALE:
+                    keyboardScale(key);
+                    break;
+            }
     }
 
     glutPostRedisplay();
 }
 
 // Inicializa o vertex para renderização
-void initData(float *vertices)
-{
+void initData(float *vertices) {
     // Vertex array.
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
@@ -168,27 +229,23 @@ void initData(float *vertices)
 }
 
 // Cria o programa e inicializa os shaders
-void initShaders()
-{
+void initShaders() {
     // Request a program and shader slots from GPU
     program = createShaderProgram(vertex_code, fragment_code);
 }
 
 // Normaliza o eixo Y
-float mapRow2Y(int r, int h)
-{
+float mapRow2Y(int r, int h) {
     return (((h - 1.0f - r) / (h - 1.0f)) * 2.0f - 1.0f);
 }
 
 // Normaliza o eixo X
-float mapColumn2X(int c, int w)
-{
+float mapColumn2X(int c, int w) {
     return ((c / (w - 1.0f)) * 2.0f - 1.0f);
 }
 
 // Adiciona um vértice ao conjunto
-void addVertice(int j, int i, float color)
-{
+void addVertice(int j, int i, float color) {
     // Adiciona todas as informações do vertice
     vertices[current++] = mapColumn2X(j, wwidth + 1);
     vertices[current++] = mapRow2Y(i, hheight + 1);
@@ -197,8 +254,7 @@ void addVertice(int j, int i, float color)
         vertices[current++] = color;
 }
 
-void readImage(char *fileName)
-{
+void readImage(char *fileName) {
     // Lê a imagem
     cgMat2i img = cgReadPGMImage(fileName);
     wwidth = img->width;
@@ -208,8 +264,7 @@ void readImage(char *fileName)
     // Cria os vértices com base nas informações da imagem
     vertices = (float *)malloc((36 * area) * sizeof(float));
     for (int i = 0; i < img->height; i++)
-        for (int j = 0; j < img->width; j++)
-        {
+        for (int j = 0; j < img->width; j++) {
             float color = img->val[i][j] / 255.0;
 
             // Primeiro triângulo
@@ -224,8 +279,7 @@ void readImage(char *fileName)
         }
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     // Inicializa o opengGL
     glutInit(&argc, argv);
     glutInitContextVersion(3, 3);
@@ -233,6 +287,7 @@ int main(int argc, char **argv)
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
     glutInitWindowSize(win_width, win_height);
     glutCreateWindow(argv[0]);
+    glutSetWindowTitle("Rotation mode");
     glewExperimental = GL_TRUE;
     glewInit();
 
